@@ -26,7 +26,11 @@ target_compile_options(rcufib_flags INTERFACE
     -Wall -Wextra -Wpedantic
     -Wshadow -Wconversion -Wsign-conversion
     -Wnon-virtual-dtor -Wold-style-cast -Woverloaded-virtual
-    -Wnull-dereference -Wdouble-promotion -Wformat=2
+    -Wdouble-promotion -Wformat=2
+    # -Wnull-dereference is a heuristic on GCC and fires inside libstdc++'s own
+    # <vector>, where no change here can silence it. Clang's implementation is
+    # precise, so it stays on there.
+    $<$<CXX_COMPILER_ID:Clang,AppleClang>:-Wnull-dereference>
     $<$<BOOL:${RCUFIB_WERROR}>:-Werror>)
 
 # ------------------------------------------------------------------- sanitizers
@@ -91,6 +95,14 @@ if(RCUFIB_BUILD_TESTS)
         tests/test_fib.cpp
         tests/test_rib.cpp
         tests/test_concurrency.cpp)
+    # GoogleTest's headers are not ours to keep warning-clean, and -Werror
+    # would make a warning in them a build failure on some compilers.
+    foreach(gtest_target gtest gtest_main gmock gmock_main)
+        if(TARGET ${gtest_target})
+            set_target_properties(${gtest_target} PROPERTIES SYSTEM TRUE)
+        endif()
+    endforeach()
+
     target_link_libraries(rcufib_tests PRIVATE rcufib GTest::gtest_main)
     gtest_discover_tests(rcufib_tests
         DISCOVERY_TIMEOUT 120

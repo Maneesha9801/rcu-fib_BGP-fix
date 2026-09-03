@@ -44,14 +44,14 @@ public:
 
     /// Insert or replace this protocol's offering. Returns true when the
     /// winning route changed as a result.
-    bool offer(const route_type& route) {
+    bool offer(const route_type& candidate) {
         const auto previous = best();
         auto it = std::find_if(routes_.begin(), routes_.end(),
-                               [&](const route_type& r) { return r.source == route.source; });
+                               [&](const route_type& r) { return r.source == candidate.source; });
         if (it != routes_.end()) {
-            *it = route;
+            *it = candidate;
         } else {
-            routes_.push_back(route);
+            routes_.push_back(candidate);
         }
         sort();
         return changed(previous);
@@ -101,10 +101,10 @@ public:
 
     /// Offer a route. Returns true when this changed the winning route for the
     /// prefix, which is the only case the FIB needs to hear about.
-    bool add(const route_type& route) {
+    bool add(const route_type& candidate) {
         ++stats_.routes_offered;
-        auto& entry = table_[route.prefix];
-        const bool changed = entry.offer(route);
+        auto& entry = table_[candidate.prefix];
+        const bool changed = entry.offer(candidate);
         if (changed) ++stats_.best_path_changes;
         return changed;
     }
