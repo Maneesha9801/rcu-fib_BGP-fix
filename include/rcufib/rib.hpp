@@ -60,8 +60,8 @@ public:
     /// Remove this protocol's offering. Returns true when the winner changed.
     bool withdraw(protocol source) {
         const auto previous = best();
-        const auto removed = std::erase_if(
-            routes_, [&](const route_type& r) { return r.source == source; });
+        const auto removed =
+            std::erase_if(routes_, [&](const route_type& r) { return r.source == source; });
         if (removed == 0) return false;
         return changed(previous);
     }
@@ -77,10 +77,9 @@ public:
 
 private:
     void sort() {
-        std::stable_sort(routes_.begin(), routes_.end(),
-                         [](const route_type& a, const route_type& b) {
-                             return a.preferred_over(b);
-                         });
+        std::stable_sort(
+            routes_.begin(), routes_.end(),
+            [](const route_type& a, const route_type& b) { return a.preferred_over(b); });
     }
 
     bool changed(const std::optional<route_type>& previous) const {
@@ -157,8 +156,8 @@ private:
 };
 
 struct sync_stats {
-    std::uint64_t marked = 0;      ///< prefixes marked dirty
-    std::uint64_t coalesced = 0;   ///< marks absorbed by an already-dirty prefix
+    std::uint64_t marked = 0;     ///< prefixes marked dirty
+    std::uint64_t coalesced = 0;  ///< marks absorbed by an already-dirty prefix
     std::uint64_t flushes = 0;
     std::uint64_t updates_programmed = 0;
     std::uint64_t adds = 0;
@@ -214,16 +213,15 @@ public:
             // intermediate states this prefix passed through never reach the
             // forwarding plane.
             if (const auto best = rib_.best(prefix); best.has_value()) {
-                batch_.push_back(update_type{
-                    .prefix = prefix,
-                    .entry = fib_entry{.hop = best->hop,
-                                       .source = best->source,
-                                       .generation = ++generation_},
-                    .kind = update_kind::add});
+                batch_.push_back(update_type{.prefix = prefix,
+                                             .entry = fib_entry{.hop = best->hop,
+                                                                .source = best->source,
+                                                                .generation = ++generation_},
+                                             .kind = update_kind::add});
                 ++stats_.adds;
             } else {
-                batch_.push_back(update_type{
-                    .prefix = prefix, .entry = {}, .kind = update_kind::remove});
+                batch_.push_back(
+                    update_type{.prefix = prefix, .entry = {}, .kind = update_kind::remove});
                 ++stats_.removes;
             }
         }

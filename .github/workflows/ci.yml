@@ -1,0 +1,145 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.os }} / ${{ matrix.compiler }} / ${{ matrix.build_type }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14]
+        compiler: [gcc, clang]
+        build_type: [Debug, Release]
+        exclude:
+          # Apple clang is the only compiler that matters on macOS.
+          - os: macos-14
+            compiler: gcc
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ninja
+        uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Select the compiler
+        run: |
+          if [ "${{ matrix.compiler }}" = "gcc" ]; then
+            echo "CC=gcc-13"  >> $GITHUB_ENV
+            echo "CXX=g++-13" >> $GITHUB_ENV
+          else
+            echo "CC=clang"   >> $GITHUB_ENV
+            echo "CXX=clang++" >> $GITHUB_ENV
+          fi
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DRCUFIB_WERROR=ON
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --timeout 300
+
+      - name: The tool runs and agrees with brute force
+        run: |
+          ./build/rcufib info --prefixes 20000
+          ./build/rcufib verify --prefixes 2000
+
+  sanitizers:
+    name: ${{ matrix.sanitizer }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [thread, address+undefined]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ninja
+        uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DRCUFIB_SANITIZER=${{ matrix.sanitizer }}
+        env:
+          CC: clang
+          CXX: clang++
+
+      - name: Build
+        run: cmake --build build
+
+      # halt_on_error makes the first race a failure rather than a warning
+      # buried in the log. For an RCU implementation this job is the point.
+      - name: Run
+        run: ./build/rcufib_tests
+        env:
+          TSAN_OPTIONS: halt_on_error=1 second_deadlock_stack=1
+          ASAN_OPTIONS: detect_leaks=1 abort_on_error=1
+          UBSAN_OPTIONS: print_stacktrace=1 halt_on_error=1
+
+  benchmark:
+    name: Benchmark smoke test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ninja
+        uses: seanmiddleditch/gha-setup-ninja@v5
+
+      - name: Configure and build
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+        env:
+          CC: clang
+          CXX: clang++
+
+      # A short run on shared CI runners: the absolute numbers there are
+      # meaningless, so this only asserts the harness works end to end and that
+      # RCU still beats a mutex under churn by a wide margin.
+      - name: Run
+        run: |
+          ./build/rcufib_bench --prefixes 50000 --readers 2 --duration 1000 --csv \
+            | tee bench.txt
+          python3 - <<'PY'
+          import csv, sys
+          rows = []
+          started = False
+          for line in open('bench.txt'):
+              if line.startswith('variant,scenario'):
+                  started = True
+              if started and line.strip():
+                  rows.append(line)
+          data = list(csv.DictReader(rows))
+          churn = {r['variant']: float(r['lookups_per_second'])
+                   for r in data if r['scenario'] == 'churn'}
+          assert churn, 'the benchmark produced no CSV output'
+          print({k: f'{v/1e6:.2f} M/s' for k, v in churn.items()})
+          assert churn['rcu'] > churn['mutex'] * 2, (
+              f"rcu {churn['rcu']:.0f} was not clearly ahead of mutex {churn['mutex']:.0f}")
+          print('ok')
+          PY
+
+  format:
+    name: clang-format
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check
+        run: |
+          find include src tests bench tools -name '*.hpp' -o -name '*.cpp' \
+            | xargs clang-format --dry-run --Werror

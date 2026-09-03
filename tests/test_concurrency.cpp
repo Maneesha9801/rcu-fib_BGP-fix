@@ -33,13 +33,12 @@ constexpr std::uint32_t gateway_for(std::uint64_t generation) {
 }
 
 fib_entry entry_for(std::uint64_t generation) {
-    return fib_entry{
-        .hop = next_hop{.gateway = gateway_for(generation),
-                        .interface = static_cast<std::uint32_t>(generation & 0xFFU),
-                        .label = 0,
-                        .metric = 0},
-        .source = protocol::bgp,
-        .generation = generation};
+    return fib_entry{.hop = next_hop{.gateway = gateway_for(generation),
+                                     .interface = static_cast<std::uint32_t>(generation & 0xFFU),
+                                     .label = 0,
+                                     .metric = 0},
+                     .source = protocol::bgp,
+                     .generation = generation};
 }
 
 bool consistent(const fib_entry& entry) {
@@ -47,7 +46,9 @@ bool consistent(const fib_entry& entry) {
            entry.hop.interface == static_cast<std::uint32_t>(entry.generation & 0xFFU);
 }
 
-ipv4_prefix p4(const char* text) { return *ipv4_prefix::parse(text); }
+ipv4_prefix p4(const char* text) {
+    return *ipv4_prefix::parse(text);
+}
 
 /// Shorter runs under a sanitizer: the point there is to exercise the
 /// interleavings, and the instrumentation is 10-20x slower.
@@ -219,9 +220,9 @@ TYPED_TEST(ConcurrencyTest, ConcurrentWritersAreSerialisedSafely) {
         writers.emplace_back([&, w] {
             sync.arrive_and_wait();
             for (int i = 0; i < per_writer; ++i) {
-                const auto& prefix =
-                    prefixes[(static_cast<std::size_t>(w) * per_writer + static_cast<std::size_t>(i)) %
-                             prefixes.size()];
+                const auto& prefix = prefixes[(static_cast<std::size_t>(w) * per_writer +
+                                               static_cast<std::size_t>(i)) %
+                                              prefixes.size()];
                 fib.insert(prefix, entry_for(generation.fetch_add(1) + 1));
             }
         });
@@ -301,7 +302,8 @@ TEST(RcuConcurrency, ALongPinnedReaderStallsReclamationButNotWriters) {
 
     std::uint64_t generation = 1;
     for (int i = 0; i < 3000; ++i) {
-        fib.insert(prefixes[static_cast<std::size_t>(i) % prefixes.size()], entry_for(++generation));
+        fib.insert(prefixes[static_cast<std::size_t>(i) % prefixes.size()],
+                   entry_for(++generation));
     }
 
     // Writes went through; the garbage is simply still waiting.
@@ -326,11 +328,11 @@ TEST(RcuConcurrency, ReadersKeepRunningThroughAFullTableReprogram) {
     const auto prefixes = generate_prefixes({.prefix_count = 5'000, .seed = 66});
     const auto traffic = generate_traffic(prefixes, 10'000, 66);
     for (const auto& prefix : prefixes) {
-        source.add(route{.prefix = prefix,
-                         .hop = next_hop{.gateway = gateway_for(1), .interface = 1, .label = 0,
-                                         .metric = 0},
-                         .source = protocol::bgp,
-                         .metric = 0});
+        source.add(route{
+            .prefix = prefix,
+            .hop = next_hop{.gateway = gateway_for(1), .interface = 1, .label = 0, .metric = 0},
+            .source = protocol::bgp,
+            .metric = 0});
         sync.mark_dirty(prefix);
     }
     sync.flush_all();
@@ -353,11 +355,14 @@ TEST(RcuConcurrency, ReadersKeepRunningThroughAFullTableReprogram) {
     // event would.
     for (int pass = 0; pass < 2; ++pass) {
         for (const auto& prefix : prefixes) {
-            source.add(route{.prefix = prefix,
-                             .hop = next_hop{.gateway = gateway_for(static_cast<std::uint64_t>(pass) + 2),
-                                             .interface = 1, .label = 0, .metric = 0},
-                             .source = protocol::bgp,
-                             .metric = static_cast<std::uint32_t>(pass) + 1});
+            source.add(
+                route{.prefix = prefix,
+                      .hop = next_hop{.gateway = gateway_for(static_cast<std::uint64_t>(pass) + 2),
+                                      .interface = 1,
+                                      .label = 0,
+                                      .metric = 0},
+                      .source = protocol::bgp,
+                      .metric = static_cast<std::uint32_t>(pass) + 1});
             sync.mark_dirty(prefix);
         }
         sync.flush_all(512);
@@ -385,15 +390,15 @@ TEST(SeqlockConcurrency, RetriesHappenUnderChurnButReadsStillSucceed) {
     std::thread reader([&] {
         std::size_t index = 0;
         while (!stop.load(std::memory_order_relaxed)) {
-            fib.visit(prefixes[index++ % prefixes.size()].address(),
-                      [](const fib_entry*) {});
+            fib.visit(prefixes[index++ % prefixes.size()].address(), [](const fib_entry*) {});
             reads.fetch_add(1, std::memory_order_relaxed);
         }
     });
 
     std::uint64_t generation = 1;
     for (int i = 0; i < 20'000; ++i) {
-        fib.insert(prefixes[static_cast<std::size_t>(i) % prefixes.size()], entry_for(++generation));
+        fib.insert(prefixes[static_cast<std::size_t>(i) % prefixes.size()],
+                   entry_for(++generation));
     }
     stop.store(true, std::memory_order_relaxed);
     reader.join();

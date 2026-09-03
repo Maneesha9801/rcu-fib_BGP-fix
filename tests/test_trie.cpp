@@ -13,8 +13,12 @@ namespace {
 
 using trie_type = radix_trie<ipv4_address, int>;
 
-ipv4_address v4(const char* text) { return *ipv4_address::parse(text); }
-ipv4_prefix p4(const char* text) { return *ipv4_prefix::parse(text); }
+ipv4_address v4(const char* text) {
+    return *ipv4_address::parse(text);
+}
+ipv4_prefix p4(const char* text) {
+    return *ipv4_prefix::parse(text);
+}
 
 int looked_up(const trie_type& trie, const char* address) {
     const int* value = trie.lookup(v4(address));
@@ -155,8 +159,7 @@ TEST(Trie, PathCompressionKeepsNodeCountNearPrefixCount) {
 
     // An uncompressed binary trie over this set would need far more than two
     // nodes per prefix; compression is what keeps lookups shallow.
-    const double ratio =
-        static_cast<double>(trie.node_count()) / static_cast<double>(trie.size());
+    const double ratio = static_cast<double>(trie.node_count()) / static_cast<double>(trie.size());
     EXPECT_LT(ratio, 2.0) << "nodes per prefix = " << ratio;
 }
 

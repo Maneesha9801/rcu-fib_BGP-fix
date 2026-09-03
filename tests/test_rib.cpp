@@ -9,8 +9,12 @@ using namespace rcufib;
 
 namespace {
 
-ipv4_address v4(const char* text) { return *ipv4_address::parse(text); }
-ipv4_prefix p4(const char* text) { return *ipv4_prefix::parse(text); }
+ipv4_address v4(const char* text) {
+    return *ipv4_address::parse(text);
+}
+ipv4_prefix p4(const char* text) {
+    return *ipv4_prefix::parse(text);
+}
 
 route make_route(const char* prefix, protocol source, std::uint32_t gateway,
                  std::uint32_t metric = 10) {

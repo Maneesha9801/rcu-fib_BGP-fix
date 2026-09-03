@@ -16,8 +16,12 @@ using namespace rcufib;
 
 namespace {
 
-ipv4_address v4(const char* text) { return *ipv4_address::parse(text); }
-ipv4_prefix p4(const char* text) { return *ipv4_prefix::parse(text); }
+ipv4_address v4(const char* text) {
+    return *ipv4_address::parse(text);
+}
+ipv4_prefix p4(const char* text) {
+    return *ipv4_prefix::parse(text);
+}
 
 fib_entry make_entry(std::uint32_t gateway, protocol source = protocol::bgp) {
     return fib_entry{.hop = next_hop{.gateway = gateway, .interface = 1, .label = 0, .metric = 10},

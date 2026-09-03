@@ -92,9 +92,8 @@ std::unique_ptr<reader> open_dump(const std::string& path, std::string& error) {
         }
         return std::make_unique<gzip_reader>(handle);
 #else
-        error =
-            "this build has no zlib, so it cannot read " + path +
-            " directly; decompress it first (gunzip -c dump.gz > dump.mrt)";
+        error = "this build has no zlib, so it cannot read " + path +
+                " directly; decompress it first (gunzip -c dump.gz > dump.mrt)";
         return nullptr;
 #endif
     }
@@ -136,8 +135,8 @@ mrt_result load_mrt_prefixes(const std::string& path, std::size_t limit) {
         const std::uint32_t length = read_be32(header.data() + 8);
 
         if (length > max_record_size) {
-            result.error = "implausible MRT record length " + std::to_string(length) +
-                           " after " + std::to_string(result.records_read) + " records";
+            result.error = "implausible MRT record length " + std::to_string(length) + " after " +
+                           std::to_string(result.records_read) + " records";
             return result;
         }
 

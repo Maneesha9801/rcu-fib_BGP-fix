@@ -52,9 +52,9 @@ struct length_share {
 /// \p hit_ratio controls how many addresses fall inside a generated prefix.
 /// Real traffic almost always hits, and a benchmark of misses would mostly
 /// measure how fast the trie can fail.
-[[nodiscard]] std::vector<ipv4_address> generate_traffic(
-    const std::vector<ipv4_prefix>& prefixes, std::size_t count, std::uint64_t seed,
-    double hit_ratio = 0.99);
+[[nodiscard]] std::vector<ipv4_address> generate_traffic(const std::vector<ipv4_prefix>& prefixes,
+                                                         std::size_t count, std::uint64_t seed,
+                                                         double hit_ratio = 0.99);
 
 /// A stream of churn: which prefixes a burst of protocol activity touches.
 ///

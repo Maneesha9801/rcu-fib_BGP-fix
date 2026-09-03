@@ -7,8 +7,12 @@ using namespace rcufib;
 
 namespace {
 
-ipv4_address v4(const char* text) { return *ipv4_address::parse(text); }
-ipv6_address v6(const char* text) { return *ipv6_address::parse(text); }
+ipv4_address v4(const char* text) {
+    return *ipv4_address::parse(text);
+}
+ipv6_address v6(const char* text) {
+    return *ipv6_address::parse(text);
+}
 
 }  // namespace
 
@@ -46,9 +50,9 @@ TEST(Address, RejectsMalformedIpv6) {
 
 TEST(Address, BitIndexesFromTheMostSignificantEnd) {
     const auto address = v4("128.0.0.1");
-    EXPECT_TRUE(address.bit(0));    // the leading 1 of 128
+    EXPECT_TRUE(address.bit(0));  // the leading 1 of 128
     EXPECT_FALSE(address.bit(1));
-    EXPECT_TRUE(address.bit(31));   // the trailing 1
+    EXPECT_TRUE(address.bit(31));  // the trailing 1
 }
 
 TEST(Address, CommonPrefixLength) {

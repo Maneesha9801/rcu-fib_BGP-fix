@@ -109,8 +109,8 @@ public:
                 best = value;  // deeper matches overwrite this, which is the LPM rule
             }
             if (current->key_length >= max_bits) break;
-            current = current->child[address.bit(current->key_length)].load(
-                std::memory_order_acquire);
+            current =
+                current->child[address.bit(current->key_length)].load(std::memory_order_acquire);
         }
         return best;
     }
@@ -143,6 +143,28 @@ public:
     template <class Fn>
     void for_each(Fn&& fn) const {
         walk(root_.load(std::memory_order_acquire), fn);
+    }
+
+    struct depth_stats {
+        std::size_t max_depth = 0;
+        double mean_depth = 0.0;
+        /// Count of stored prefixes reachable at each depth.
+        std::vector<std::size_t> histogram;
+    };
+
+    /// How many nodes a lookup traverses to reach each stored prefix.
+    ///
+    /// This is the number path compression exists to reduce, and the one that
+    /// predicts lookup cost: every level is a dependent load, so depth is
+    /// cache misses, not comparisons.
+    [[nodiscard]] depth_stats measure_depth() const {
+        depth_stats stats;
+        std::size_t total = 0;
+        std::size_t count = 0;
+        measure(root_.load(std::memory_order_acquire), 1, stats, total, count);
+        stats.mean_depth =
+            count == 0 ? 0.0 : static_cast<double>(total) / static_cast<double>(count);
+        return stats;
     }
 
     // ---------------------------------------------------------------- writing
@@ -211,8 +233,7 @@ private:
                 return true;
             }
 
-            const std::size_t shared =
-                current->key.common_prefix_length(prefix.address());
+            const std::size_t shared = current->key.common_prefix_length(prefix.address());
             const std::size_t usable = std::min<std::size_t>(current->key_length, prefix.length());
 
             if (shared < usable) {
@@ -315,6 +336,20 @@ private:
         }
         walk(current->child[0].load(std::memory_order_acquire), fn);
         walk(current->child[1].load(std::memory_order_acquire), fn);
+    }
+
+    void measure(const node* current, std::size_t depth, depth_stats& stats, std::size_t& total,
+                 std::size_t& count) const {
+        if (current == nullptr) return;
+        if (current->value.load(std::memory_order_acquire) != nullptr) {
+            if (stats.histogram.size() <= depth) stats.histogram.resize(depth + 1, 0);
+            ++stats.histogram[depth];
+            stats.max_depth = std::max(stats.max_depth, depth);
+            total += depth;
+            ++count;
+        }
+        measure(current->child[0].load(std::memory_order_acquire), depth + 1, stats, total, count);
+        measure(current->child[1].load(std::memory_order_acquire), depth + 1, stats, total, count);
     }
 
     void destroy(node* current) noexcept {

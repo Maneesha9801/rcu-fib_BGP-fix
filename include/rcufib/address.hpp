@@ -111,14 +111,10 @@ public:
     [[nodiscard]] static std::optional<basic_address> parse(std::string_view text);
 
 private:
-    static constexpr std::size_t bits_per_word() noexcept {
-        return Bits == 32 ? 32 : 64;
-    }
+    static constexpr std::size_t bits_per_word() noexcept { return Bits == 32 ? 32 : 64; }
     /// Unused high bits inside the storage word, for a 32-bit address in a
     /// 64-bit slot.
-    static constexpr std::size_t padding_bits() noexcept {
-        return Bits == 32 ? 32 : 0;
-    }
+    static constexpr std::size_t padding_bits() noexcept { return Bits == 32 ? 32 : 0; }
 
     storage_type words_{};
 };

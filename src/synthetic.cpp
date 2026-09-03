@@ -81,9 +81,9 @@ std::vector<ipv4_prefix> generate_prefixes(const synthetic_options& options) {
         // Random host bits below the allocation, then mask back to `length`.
         const std::uint32_t span = length - chosen.length;
         const std::uint32_t random_bits =
-            span == 0 ? 0U
-                      : static_cast<std::uint32_t>(rng() & ((1ULL << span) - 1ULL))
-                            << (32U - length);
+            span == 0
+                ? 0U
+                : static_cast<std::uint32_t>(rng() & ((1ULL << span) - 1ULL)) << (32U - length);
         const ipv4_prefix candidate(ipv4_address::from_v4(chosen.base | random_bits), length);
         if (seen.insert(candidate).second) out.push_back(candidate);
     }
@@ -126,9 +126,8 @@ std::vector<std::size_t> generate_churn_indices(std::size_t prefix_count, std::s
     out.reserve(churn_count);
 
     std::mt19937_64 rng(seed ^ 0xC0FFEE);
-    const std::size_t hot_size =
-        std::max<std::size_t>(1, static_cast<std::size_t>(
-                                     static_cast<double>(prefix_count) * hot_fraction));
+    const std::size_t hot_size = std::max<std::size_t>(
+        1, static_cast<std::size_t>(static_cast<double>(prefix_count) * hot_fraction));
 
     // The hot set is a contiguous slice chosen once: a flapping session
     // re-advertises the prefixes behind it, and those are adjacent in the table

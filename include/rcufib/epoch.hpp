@@ -42,8 +42,8 @@ inline constexpr std::size_t max_epoch_domains = 8;
 inline constexpr std::uint64_t epoch_ring_size = 3;
 
 struct reclamation_stats {
-    std::uint64_t retired = 0;       ///< objects handed to retire()
-    std::uint64_t reclaimed = 0;     ///< objects actually freed
+    std::uint64_t retired = 0;    ///< objects handed to retire()
+    std::uint64_t reclaimed = 0;  ///< objects actually freed
     std::uint64_t epoch_advances = 0;
     std::uint64_t failed_advances = 0;  ///< a reader was still pinned behind
     std::uint64_t threads_registered = 0;

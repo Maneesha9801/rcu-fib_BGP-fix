@@ -27,8 +27,7 @@ std::optional<ipv4_address> parse_v4(std::string_view text) {
         // after the fourth means trailing junk.
         if (last != (dot == std::string_view::npos)) return std::nullopt;
 
-        const std::string_view part =
-            last ? text.substr(start) : text.substr(start, dot - start);
+        const std::string_view part = last ? text.substr(start) : text.substr(start, dot - start);
         // Reject leading zeros: "010" is ambiguous between decimal and octal
         // across implementations, and silently guessing is worse than refusing.
         if (part.size() > 1 && part.front() == '0') return std::nullopt;
@@ -43,8 +42,8 @@ std::optional<ipv4_address> parse_v4(std::string_view text) {
 
 std::optional<ipv6_address> parse_v6(std::string_view text) {
     std::array<std::uint16_t, 8> groups{};
-    int head = 0;                 // groups before "::"
-    int tail = 0;                 // groups after "::"
+    int head = 0;  // groups before "::"
+    int tail = 0;  // groups after "::"
     std::array<std::uint16_t, 8> tail_groups{};
     bool seen_compression = false;
 
@@ -105,7 +104,8 @@ std::optional<ipv6_address> parse_v6(std::string_view text) {
     if (head + tail > 8) return std::nullopt;
 
     std::array<std::uint16_t, 8> full{};
-    for (int i = 0; i < head; ++i) full[static_cast<std::size_t>(i)] = groups[static_cast<std::size_t>(i)];
+    for (int i = 0; i < head; ++i)
+        full[static_cast<std::size_t>(i)] = groups[static_cast<std::size_t>(i)];
     for (int i = 0; i < tail; ++i)
         full[static_cast<std::size_t>(8 - tail + i)] = tail_groups[static_cast<std::size_t>(i)];
 

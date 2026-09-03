@@ -94,8 +94,8 @@ struct std::hash<rcufib::basic_prefix<Address>> {
         for (const auto word : prefix.address().words()) {
             // Boost's mix: adequate here, and the alternative is pulling in a
             // hashing dependency for a map that is not on the hot path.
-            seed ^= static_cast<std::size_t>(word) + 0x9e3779b97f4a7c15ULL + (seed << 6) +
-                    (seed >> 2);
+            seed ^=
+                static_cast<std::size_t>(word) + 0x9e3779b97f4a7c15ULL + (seed << 6) + (seed >> 2);
         }
         return seed;
     }

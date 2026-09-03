@@ -264,7 +264,8 @@ private:
     /// afterwards, so a reader that saw either value knows whether the table
     /// moved under it.
     struct write_section {
-        explicit write_section(std::atomic<std::uint64_t>& sequence) noexcept : sequence_(sequence) {
+        explicit write_section(std::atomic<std::uint64_t>& sequence) noexcept
+            : sequence_(sequence) {
             sequence_.fetch_add(1, std::memory_order_release);
             std::atomic_thread_fence(std::memory_order_release);
         }

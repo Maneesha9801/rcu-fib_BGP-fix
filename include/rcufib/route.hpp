@@ -24,24 +24,36 @@ enum class protocol : std::uint8_t {
 [[nodiscard]] constexpr std::uint8_t administrative_distance(protocol source) noexcept {
     // The conventional values; a control plane compares these before metrics.
     switch (source) {
-        case protocol::connected: return 0;
-        case protocol::local: return 0;
-        case protocol::static_route: return 1;
-        case protocol::isis: return 115;
-        case protocol::ospf: return 110;
-        case protocol::bgp: return 200;
+        case protocol::connected:
+            return 0;
+        case protocol::local:
+            return 0;
+        case protocol::static_route:
+            return 1;
+        case protocol::isis:
+            return 115;
+        case protocol::ospf:
+            return 110;
+        case protocol::bgp:
+            return 200;
     }
     return 255;
 }
 
 [[nodiscard]] constexpr const char* to_string(protocol source) noexcept {
     switch (source) {
-        case protocol::connected: return "connected";
-        case protocol::local: return "local";
-        case protocol::static_route: return "static";
-        case protocol::isis: return "isis";
-        case protocol::ospf: return "ospf";
-        case protocol::bgp: return "bgp";
+        case protocol::connected:
+            return "connected";
+        case protocol::local:
+            return "local";
+        case protocol::static_route:
+            return "static";
+        case protocol::isis:
+            return "isis";
+        case protocol::ospf:
+            return "ospf";
+        case protocol::bgp:
+            return "bgp";
     }
     return "unknown";
 }
@@ -82,9 +94,7 @@ struct basic_route {
     protocol source = protocol::bgp;
     std::uint32_t metric = 0;
 
-    [[nodiscard]] std::uint8_t distance() const noexcept {
-        return administrative_distance(source);
-    }
+    [[nodiscard]] std::uint8_t distance() const noexcept { return administrative_distance(source); }
 
     /// True when this route should beat \p other for the same prefix:
     /// administrative distance first, then protocol metric, exactly as a
