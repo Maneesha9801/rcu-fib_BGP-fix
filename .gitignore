@@ -1,0 +1,15 @@
+build/
+build-*/
+cmake-build-*/
+.cache/
+compile_commands.json
+*.o
+*.a
+*.dSYM/
+.DS_Store
+.idea/
+.vscode/
+perf.data*
+*.mrt
+*.mrt.gz
+*.bz2
