@@ -27,10 +27,10 @@ target_compile_options(rcufib_flags INTERFACE
     -Wshadow -Wconversion -Wsign-conversion
     -Wnon-virtual-dtor -Wold-style-cast -Woverloaded-virtual
     -Wdouble-promotion -Wformat=2
-    # -Wnull-dereference is a heuristic on GCC and fires inside libstdc++'s own
-    # <vector>, where no change here can silence it. Clang's implementation is
-    # precise, so it stays on there.
-    $<$<CXX_COMPILER_ID:Clang,AppleClang>:-Wnull-dereference>
+    # -Wnull-dereference is deliberately absent. It is a heuristic that fires
+    # inside libstdc++'s own <vector>, from code this project cannot change, and
+    # both GCC and Clang use libstdc++ on Linux. A warning nobody can act on is
+    # worse than no warning, because it trains people to ignore the build.
     $<$<BOOL:${RCUFIB_WERROR}>:-Werror>)
 
 # ------------------------------------------------------------------- sanitizers

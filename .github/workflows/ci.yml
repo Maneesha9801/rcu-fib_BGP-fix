@@ -46,8 +46,18 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DRCUFIB_WERROR=ON
 
+      # Compiler diagnostics are echoed as workflow errors so they appear in the
+      # run's annotations rather than only in the log, which makes a failure on
+      # a toolchain that is not to hand diagnosable at a glance.
       - name: Build
-        run: cmake --build build
+        run: |
+          set -o pipefail
+          if ! cmake --build build 2>&1 | tee build.log; then
+            grep -E "error:|warning:" build.log | head -20 | while IFS= read -r line; do
+              echo "::error::${line}"
+            done
+            exit 1
+          fi
 
       - name: Test
         run: ctest --test-dir build --output-on-failure --timeout 300
